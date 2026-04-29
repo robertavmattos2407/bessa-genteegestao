@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Gestão de Pessoas — Contabilidade Bessa</title>
+  <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --az: #3BB3C3; --az2: #1a6a7a; --dark: #0a1f28;
+      --ok: #10B981; --warn: #D97706; --err: #DC2626;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0a1f28 0%, #0d2535 60%, #0a3040 100%);
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 40px 20px;
+      color: #fff;
+    }
+    header { text-align: center; margin-bottom: 56px; }
+    .logo-tag {
+      font-size: 13px; font-weight: 700; color: var(--az);
+      text-transform: uppercase; letter-spacing: 2px;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-family: 'Urbanist', sans-serif;
+      font-size: clamp(28px, 5vw, 48px);
+      font-weight: 900; color: #fff;
+      line-height: 1.1; margin-bottom: 16px;
+    }
+    h1 span { color: var(--az); }
+    .subtitle {
+      font-size: 16px; color: rgba(255,255,255,.5);
+      max-width: 520px; margin: 0 auto; line-height: 1.6;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px; width: 100%; max-width: 980px;
+      margin-bottom: 48px;
+    }
+    .card {
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 20px; padding: 32px 28px;
+      display: flex; flex-direction: column; gap: 16px;
+      transition: transform .2s, border-color .2s, box-shadow .2s;
+      text-decoration: none; color: inherit;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: var(--az);
+      box-shadow: 0 20px 40px rgba(59,179,195,.15);
+    }
+    .card-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+    }
+    .card-badge {
+      font-size: 11px; font-weight: 700; padding: 3px 10px;
+      border-radius: 20px; align-self: flex-start;
+    }
+    .card h2 {
+      font-family: 'Urbanist', sans-serif;
+      font-size: 20px; font-weight: 800; color: #fff;
+    }
+    .card p {
+      font-size: 13px; color: rgba(255,255,255,.5);
+      line-height: 1.6; flex: 1;
+    }
+    .card-meta {
+      font-size: 12px; color: rgba(255,255,255,.3);
+      display: flex; gap: 12px; flex-wrap: wrap;
+    }
+    .card-meta span { display: flex; align-items: center; gap: 4px; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 20px; border-radius: 10px;
+      font-size: 13px; font-weight: 700;
+      font-family: 'Inter', sans-serif;
+      text-decoration: none; transition: .2s;
+      border: none; cursor: pointer;
+    }
+    .btn-prim {
+      background: linear-gradient(135deg, var(--az), var(--az2));
+      color: #fff;
+    }
+    .btn-prim:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-sec {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      color: rgba(255,255,255,.7);
+    }
+    .btn-sec:hover { background: rgba(255,255,255,.1); }
+
+    .info-box {
+      width: 100%; max-width: 980px;
+      background: rgba(59,179,195,.06);
+      border: 1px solid rgba(59,179,195,.2);
+      border-radius: 16px; padding: 24px 28px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px; margin-bottom: 40px;
+    }
+    .info-item { display: flex; flex-direction: column; gap: 4px; }
+    .info-label { font-size: 11px; font-weight: 700; color: var(--az); text-transform: uppercase; letter-spacing: .8px; }
+    .info-val { font-size: 14px; color: rgba(255,255,255,.8); }
+
+    footer {
+      font-size: 12px; color: rgba(255,255,255,.2);
+      text-align: center; margin-top: auto; padding-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-tag">Contabilidade Bessa</div>
+    <h1>Sistema de <span>Gestão de Pessoas</span></h1>
+    <p class="subtitle">DISC · Clima Organizacional · NR-01 · Avaliação de Desempenho · PDI · Motor de Decisão</p>
+  </header>
+
+  <div class="info-box">
+    <div class="info-item">
+      <div class="info-label">Acesso Admin</div>
+      <div class="info-val">roberta / bessa2026</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Ciclo semestral</div>
+      <div class="info-val">Junho — DISC + Clima</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Ciclo anual</div>
+      <div class="info-val">Dezembro — Avaliação completa</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label">Versão</div>
+      <div class="info-val">1.0 — 2026</div>
+    </div>
+  </div>
+
+  <div class="cards">
+
+    <!-- CARD 1 — Formulário semestral -->
+    <a href="disc_clima.html" class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="card-icon" style="background:rgba(59,179,195,.12)">📋</div>
+        <span class="card-badge" style="background:rgba(59,179,195,.15);color:#3BB3C3;border:1px solid rgba(59,179,195,.3)">Junho</span>
+      </div>
+      <h2>Mapeamento Semestral</h2>
+      <p>DISC comportamental + Clima Organizacional e NR-01. Preenchido pelo colaborador. Duração: 10 a 15 minutos.</p>
+      <div class="card-meta">
+        <span>⏱ 10–15 min</span>
+        <span>👤 Colaborador</span>
+        <span>📅 Semestral</span>
+      </div>
+      <span class="btn btn-prim" style="margin-top:4px">Abrir formulário →</span>
+    </a>
+
+    <!-- CARD 2 — Formulário anual -->
+    <a href="disc_clima_avaliacao.html" class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="card-icon" style="background:rgba(16,185,129,.12)">📝</div>
+        <span class="card-badge" style="background:rgba(16,185,129,.15);color:#10B981;border:1px solid rgba(16,185,129,.3)">Dezembro</span>
+      </div>
+      <h2>Avaliação Completa</h2>
+      <p>DISC + Clima + Autoavaliação técnica e comportamental + PDI. Inclui critérios específicos por área e cargo. Duração: 20 a 25 minutos.</p>
+      <div class="card-meta">
+        <span>⏱ 20–25 min</span>
+        <span>👤 Colaborador</span>
+        <span>📅 Anual</span>
+      </div>
+      <span class="btn btn-prim" style="margin-top:4px;background:linear-gradient(135deg,#10B981,#059669)">Abrir formulário →</span>
+    </a>
+
+    <!-- CARD 3 — Painel do gestor -->
+    <a href="gestor.html" class="card" style="border-color:rgba(59,179,195,.2)">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="card-icon" style="background:rgba(59,179,195,.12)">🎯</div>
+        <span class="card-badge" style="background:rgba(59,179,195,.15);color:#3BB3C3;border:1px solid rgba(59,179,195,.3)">Restrito</span>
+      </div>
+      <h2>Painel do Gestor</h2>
+      <p>Avaliação, decisão organizacional, PDI automático, dashboard estratégico, auditoria de overrides e motor de calibração. Acesso com login.</p>
+      <div class="card-meta">
+        <span>🔐 Login obrigatório</span>
+        <span>👔 Gestor / Diretoria</span>
+      </div>
+      <span class="btn btn-prim" style="margin-top:4px">Entrar no painel →</span>
+    </a>
+
+  </div>
+
+  <footer>
+    Sistema interno — uso restrito · Contabilidade Bessa · v1.0 · 2026
+  </footer>
+
+</body>
+</html>
