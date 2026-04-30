@@ -356,7 +356,7 @@ tr:hover td { background:#F9FAFB; }
           <p>Cadastro central de colaboradores e base do sistema</p>
         </div>
         <div style="display:flex;gap:10px">
-          <button onclick="importarDoSheets()" style="padding:11px 20px;background:#F3F4F6;border:1px solid var(--borda);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;color:var(--tx2)">↓ Importar do Sheets</button>
+          <button onclick="importarDoSheets()" style="padding:11px 20px;background:#F0FDFE;border:1.5px solid rgba(59,179,195,.4);border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;color:var(--az2)">⬇️ Importar do Sheets</button>
           <button onclick="abrirModalPessoa()" style="padding:11px 22px;background:linear-gradient(135deg,var(--az),var(--az2));color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">+ Nova Pessoa</button>
         </div>
       </div>
@@ -4179,8 +4179,9 @@ function salvarPessoa() {
   const nome = document.getElementById('pNome').value.trim();
   const area = document.getElementById('pArea').value;
   const nivel= document.getElementById('pNivel').value;
-  if (!cpf || cpf.length < 11) { toast('CPF inválido.','err'); return; }
   if (!nome || !area || !nivel) { toast('Preencha nome, área e nível.','err'); return; }
+  // CPF opcional — se informado, deve ser válido
+  if (cpf && cpf.length > 0 && cpf.length < 11) { toast('CPF inválido (deve ter 11 dígitos).','err'); return; }
 
   const pessoas = getPessoas();
   const dados = {
@@ -4191,6 +4192,7 @@ function salvarPessoa() {
     email:     document.getElementById('pEmail').value.trim(),
     whatsapp:  document.getElementById('pWhatsapp').value.trim(),
     disc:      document.getElementById('pDisc').value,
+    tipo_avaliacao: (document.getElementById('pTipoAval')?.value || ''),
     obs:       document.getElementById('pObs').value.trim(),
     updatedAt: new Date().toISOString(),
   };
@@ -4199,9 +4201,11 @@ function salvarPessoa() {
     const idx = pessoas.findIndex(p => p.id === pessoaEditandoId);
     if (idx >= 0) pessoas[idx] = { ...pessoas[idx], ...dados };
   } else {
-    if (pessoas.find(p => normCpf(p.cpf) === cpf)) {
-      toast('Já existe uma pessoa com esse CPF.','err'); return;
-    }
+    // Checar duplicata por CPF (se informado) ou por nome
+    const cpfDup = cpf && pessoas.find(p => normCpf(p.cpf) === cpf && p.cpf);
+    const nomeDup= pessoas.find(p => norm(p.nome) === norm(nome));
+    if (cpfDup) { toast('Já existe uma pessoa com esse CPF.','err'); return; }
+    if (nomeDup) { toast('Já existe uma pessoa com esse nome.','err'); return; }
     dados.id = 'p_' + Date.now();
     dados.createdAt = new Date().toISOString();
     pessoas.push(dados);
@@ -4229,8 +4233,9 @@ async function importarDoSheets() {
   toast('Buscando dados do Sheets...','');
   try {
     const resp = await fetch(API + '?action=get');
-    const dados = await resp.json();
-    if (!Array.isArray(dados) || !dados.length) { toast('Nenhum dado encontrado no Sheets.','err'); return; }
+    const json = await resp.json();
+    const dados = Array.isArray(json) ? json : (json.data || []);
+    if (!dados.length) { toast('Nenhum dado encontrado no Sheets ainda. Verifique se o script está publicado.','err'); return; }
 
     const pessoas = getPessoas();
     let novos = 0, atualizados = 0;
@@ -4264,11 +4269,12 @@ async function importarDoSheets() {
           nome: nomeTrim,
           area: d.setor || d.area || '',
           nivel: d.nivel || '',
+          tipo_avaliacao: d.tipo_avaliacao || '',
           admissao: '',
           status: 'Funcionário',
           email: '', whatsapp: '',
           disc: discVal,
-          obs: 'Importado automaticamente do Sheets',
+          obs: 'Importado do Sheets em ' + new Date().toLocaleDateString('pt-BR'),
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
