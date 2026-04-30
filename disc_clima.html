@@ -345,7 +345,7 @@ body{font-family:'Inter',sans-serif;background:#0a1520;color:#fff;min-height:100
 </div>
 
 <script>
-const API='https://script.google.com/macros/s/AKfycbyI6cMx8vclLUSKCUY9gbRAEPPli85FPgdJ40Zl468nVNuCdK_N5bf_akwCw4_P9I4TDw/exec';
+const API='https://script.google.com/macros/s/AKfycbzFg43BmdrNGd0QL8iZnbTI3HIpCmXPeeeyLHnXrQmUAEve2AbftIp1JIXksa1WBBT81Q/exec';
 
 // ===== DISC PERGUNTAS — sem revelar letras =====
 const DQ=[
@@ -724,15 +724,20 @@ function enviar(){
 
   renderResultado(dom,perc,climaMedia,riscos,insights,classif,prio,pdi);
 
-  fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({
-    action:'saveDiscClima',cpf:pessoa.cpf,nome:pessoa.nome,setor:pessoa.setor,nivel:pessoa.nivel,
-    data:new Date().toISOString(),disc_dom:dom,disc_D:perc.D,disc_I:perc.I,disc_S:perc.S,disc_C:perc.C,
-    ...Object.fromEntries(CQ.map(q=>['clima_'+q.id,cResp[q.id]])),
-    clima_media:climaMedia.toFixed(2),
-    clima_comentario:document.getElementById('cComent').value.trim(),
-    fatores_risco:riscos.map(r=>r.f).join(', '),
-    classificacao:classif.status,prioridade:prio.label
-  })}).catch(()=>{});
+  // Enviar ao Google Sheets com campos padronizados
+  const payloadDisc = {
+    action:'saveDiscClima',
+    nome:pessoa.nome, setor:pessoa.setor||'', nivel:pessoa.nivel||'',
+    tipo_avaliacao: pessoa.tipo_avaliacao||'',
+    data:new Date().toISOString(),
+    perfil_dominante:dom,   // campo que o painel lê
+    disc_D:perc.D, disc_I:perc.I, disc_S:perc.S, disc_C:perc.C,
+    // Clima com os dois formatos para compatibilidade
+    ...Object.fromEntries(CQ.map(q=>['clima_'+q.id, cResp[q.id]])),
+    ...Object.fromEntries(CQ.map(q=>[q.id, cResp[q.id]])),
+    clima: climaMedia.toFixed(2)
+  };
+  fetch(API,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payloadDisc)}).catch(()=>{});
 
   irSec(5);
 }

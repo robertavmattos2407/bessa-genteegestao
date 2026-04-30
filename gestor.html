@@ -1102,7 +1102,7 @@ function atualizarStatusAcao(fbId, novoStatus) {
   renderTabelaFeedbacks();
 }
 
-const API = 'https://script.google.com/macros/s/AKfycbyI6cMx8vclLUSKCUY9gbRAEPPli85FPgdJ40Zl468nVNuCdK_N5bf_akwCw4_P9I4TDw/exec';
+const API = 'https://script.google.com/macros/s/AKfycbzFg43BmdrNGd0QL8iZnbTI3HIpCmXPeeeyLHnXrQmUAEve2AbftIp1JIXksa1WBBT81Q/exec';
 
 // ===== CONTA MASTER (diretora) =====
 const MASTER = { usuario: 'roberta', senha: 'bessa2026', nome: 'Roberta — Diretora', areas: ['Todas'], role: 'admin' };
@@ -1208,7 +1208,9 @@ async function carregarColaboradores() {
   let dadosSheets = [];
   try {
     const resp = await fetch(API + '?action=get');
-    dadosSheets = await resp.json();
+    const json = await resp.json();
+    // Novo formato: { ok, data: [...] } ou array legado
+    dadosSheets = Array.isArray(json) ? json : (json.data || []);
     if (!Array.isArray(dadosSheets)) dadosSheets = [];
   } catch(e) {
     dadosSheets = [];
@@ -1218,6 +1220,9 @@ async function carregarColaboradores() {
   const pessoasLocal = getPessoas().filter(p => (p.status||'').toLowerCase() !== 'inativo');
   const histLocal    = JSON.parse(localStorage.getItem('bessa_disc_hist') || '[]');
   const dashLocal    = JSON.parse(localStorage.getItem('bessa_dashboard')  || '[]');
+  // Índice por nome normalizado para lookup rápido
+  const dashIdx = {};
+  dashLocal.forEach(d => { if(d.nome) dashIdx[norm(d.nome)] = d; });
 
   // ── 3. Montar mapa unificado — prioridade: Sheets > local ──
   const mapa = {};
@@ -1234,10 +1239,19 @@ async function carregarColaboradores() {
     const dash = dashLocal.filter(d => norm(d.nome) === key)
                           .sort((a,b) => (b.data||'').localeCompare(a.data||''));
     const ultDash = dash[0] || {};
+    // Avaliação do gestor salva localmente
+    const dashGestor = dashIdx[norm(p.nome)] || {};
     mapa[key] = {
       nome: p.nome, setor: p.area || p.setor || '', nivel: p.nivel || '',
       tipo_avaliacao: p.tipo_avaliacao || '',
-      perfil_dominante: p.disc || ultHist.disc || '',
+      // DISC: calcular pelo score real (evita bug tipo Luan C aparece como D)
+      perfil_dominante: (() => {
+        const dD=parseInt(ultHist.disc_D||0),dI=parseInt(ultHist.disc_I||0);
+        const dS=parseInt(ultHist.disc_S||0),dC=parseInt(ultHist.disc_C||0);
+        if(!dD&&!dI&&!dS&&!dC) return p.disc||dashGestor.perfil_dominante||'';
+        const max=Math.max(dD,dI,dS,dC);
+        return max===dD?'D':max===dI?'I':max===dS?'S':'C';
+      })(),
       disc_D: ultHist.disc_D || '', disc_I: ultHist.disc_I || '',
       disc_S: ultHist.disc_S || '', disc_C: ultHist.disc_C || '',
       clima_media: ultHist.clima || ultDash.clima || '',
@@ -1254,7 +1268,20 @@ async function carregarColaboradores() {
       clareza: ultHist.clareza || '', relacao: ultHist.relacao || '',
       reconhec: ultHist.reconhec || '', prazos: ultHist.prazos || '',
       equilibrio: ultHist.equilibrio || '', psico: ultHist.psico || '',
-      gestor_avaliado: '', gestor_data: '', gestor_obs_pdi: '',
+      // Avaliação do gestor (do localStorage)
+      gestor_avaliado: dashGestor.gestor_avaliado || '',
+      gestor_data:     dashGestor.gestor_data     || '',
+      gestor_obs_pdi:  dashGestor.gestor_obs_pdi  || dashGestor.gestor_obs || '',
+      // Notas comportamentais do gestor
+      ...Object.fromEntries(
+        ['c0','c1','c2','c3','c4','c5','c6','c7','c8'].map(id => ['gestor_'+id, dashGestor['gestor_'+id] || ''])
+      ),
+      // Notas técnicas do gestor (t0-t3, g0-g8, e0-e8)
+      ...Object.fromEntries(
+        Array.from({length:9},(_,i)=>[`gestor_t${i}`, dashGestor[`gestor_t${i}`]||'']).concat(
+        Array.from({length:9},(_,i)=>[`gestor_g${i}`, dashGestor[`gestor_g${i}`]||'']).concat(
+        Array.from({length:9},(_,i)=>[`gestor_e${i}`, dashGestor[`gestor_e${i}`]||''])))
+      ),
       _fonte: 'local'
     };
   });
@@ -2073,13 +2100,20 @@ function montarColaborador(raw) {
     .map(([f]) => f);
 
   // ── 3. DISC ──
-  const discPerfil = raw.perfil_dominante || raw.disc_dominante || raw.disc || '';
   const discScores = {
     D: parseInt(raw.disc_D || 0),
     I: parseInt(raw.disc_I || 0),
     S: parseInt(raw.disc_S || 0),
     C: parseInt(raw.disc_C || 0)
   };
+  // Calcular perfil dominante pelos scores reais — evita inconsistência
+  const discPerfil = (() => {
+    const {D,I,S,C} = discScores;
+    if (D===0 && I===0 && S===0 && C===0) return raw.perfil_dominante || raw.disc_dominante || raw.disc || '';
+    const max = Math.max(D,I,S,C);
+    if (max===D) return 'D'; if (max===I) return 'I';
+    if (max===S) return 'S'; return 'C';
+  })();
 
   // ── 4. TIPO E IDENTIFICAÇÃO ──
   const tipo  = tipoColaborador(raw);
@@ -2310,7 +2344,7 @@ function abrirCollab(idx) {
       <td>${crit.nome}${travaHtml}</td>
       <td><span class="nota-auto">${auto}</span></td>
       <td class="nota-gestor">
-        <select name="gt_${i}" ${disabledAttr} onchange="calcularDecisao()">
+        <select name="gt_${i}" ${disabledAttr} onchange="calcularDecisao();atualizarDivTec(${i},'${auto}',this.value)">
           <option value="">—</option>
           <option value="1" ${gVal=='1'?'selected':''}>1 — Em desenvolvimento</option>
           <option value="2" ${gVal=='2'?'selected':''}>2 — Atende expectativas</option>
@@ -2938,8 +2972,8 @@ function calcularDecisao() {
       else if (pontuacaoFinal <= 16) faixaLabel = 'Gestor 2';
       else if (pontuacaoFinal <= 19) faixaLabel = 'Gestor 3';
       else if (pontuacaoFinal <= 22) faixaLabel = 'Gestor 4';
-      else if (pontuacaoFinal <= 24) faixaLabel = 'Gestor 5';
-      else                           faixaLabel = 'Gestor 6';
+      else if (pontuacaoFinal <= 25) faixaLabel = 'Gestor 5';  // TAR: 23-25
+      else                           faixaLabel = 'Gestor 6';  // TAR: 26-27
     } else {
       if      (pontuacaoFinal <= 12) faixaLabel = 'Especialista I';
       else if (pontuacaoFinal <= 15) faixaLabel = 'Especialista II';
@@ -3260,24 +3294,53 @@ async function salvarAvaliacao() {
   if (obsPdi) payload.gestor_obs_pdi = obsPdi.value;
   if (obs) payload.gestor_obs = obs.value;
 
+  // ── SALVAR SEMPRE EM localStorage (independente de Sheets) ──
+  try {
+    const dash = JSON.parse(localStorage.getItem('bessa_dashboard') || '[]');
+    const nomeNorm = norm(payload.nome);
+    // Atualizar ou inserir
+    const idx = dash.findIndex(d => norm(d.nome) === nomeNorm);
+    const registro = { ...(idx >= 0 ? dash[idx] : {}), ...payload, _atualizadoEm: new Date().toISOString() };
+    if (idx >= 0) dash[idx] = registro; else dash.push(registro);
+    localStorage.setItem('bessa_dashboard', JSON.stringify(dash));
+
+    // Atualizar também em todosColabs para refletir imediatamente
+    const idxColab = todosColabs.findIndex(c => norm(c.nome) === nomeNorm);
+    if (idxColab >= 0) {
+      Object.assign(todosColabs[idxColab], payload);
+    }
+  } catch(saveErr) {
+    console.warn('Erro ao salvar localmente:', saveErr);
+  }
+
+  // ── Tentar enviar ao Google Sheets (opcional, não bloqueia) ──
   try {
     await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify(payload)
     });
-    toast('✅ Avaliação salva com sucesso!', 'ok');
-    invalidarCache();
-    collabAtual.gestor_avaliado = 'SIM';
+  } catch(e) {
+    // Sheets offline — dados já salvos localmente, não é erro crítico
+    console.warn('Google Sheets offline — dados salvos localmente apenas');
+  }
 
-    // ── CONSEQUÊNCIA AUTOMÁTICA PELA DECISÃO ──
+  toast('✅ Avaliação salva com sucesso!', 'ok');
+  invalidarCache();
+  collabAtual.gestor_avaliado = 'SIM';
+  Object.assign(collabAtual, payload);
+
+  // ── CONSEQUÊNCIA AUTOMÁTICA PELA DECISÃO ──
+  try {
     const colabSalvo = montarColaborador({...collabAtual, gestor_avaliado:'SIM'});
     const decSalva   = decisaoFinal(colabSalvo);
     gerarConsequencia(colabSalvo, decSalva);
+    salvarSnapshot(colabSalvo);
+  } catch(e) {}
 
-    setTimeout(() => voltarLista(), 2000);
-  } catch(e) {
-    toast('⚠️ Erro ao salvar. Verifique a conexão.', 'err');
+  setTimeout(() => voltarLista(), 2000);
+  if (false) { // Bloco catch antigo — mantido por estrutura
+  toast('⚠️ Erro ao salvar. Verifique a conexão.', 'err');
     btn.disabled = false;
     btn.textContent = '💾 Salvar Avaliação do Gestor';
   }
@@ -4147,6 +4210,9 @@ function salvarPessoa() {
   setPessoas(pessoas);
   fecharModalPessoa();
   toast('✅ Pessoa salva!','ok');
+  invalidarCache();
+  // Recarregar lista para refletir mudança imediatamente
+  setTimeout(() => carregarColaboradores(), 300);
   renderPessoas();
 }
 
